@@ -208,25 +208,10 @@ func (m model) View() string {
 
 func dump() ([]string, error) {
 	var output []string
-	out, err := utils.DumpMBR(nil, nil)
-	if err != nil {
-		return output, err
-	}
-
-	// read bytes
-	f, err := os.Open("/tmp/mbr.bak")
+	bytes, err := utils.UniversalMBRDump()
 	if err != nil {
 		panic(err)
 	}
-	defer f.Close()
-
-	bytes := make([]byte, 2046)
-	n, err := f.Read(bytes)
-	if err != nil {
-		panic(err)
-	}
-
-	out += fmt.Sprintf("read bytes %d", n)
 
 	hash_bytes := sha256.Sum256(bytes[:])
 	hash_hex := hex.EncodeToString(hash_bytes[:])
@@ -399,6 +384,11 @@ func rumCmd(cmd string) ([]string, error) {
 		output = append(output, string(body))
 
 	case "g", "genisis":
+		Globalconf.File.IsRegistered = true
+		if !check(&output) {
+			Globalconf.File.IsRegistered = false
+			return output, nil
+		}
 
 	// Set remote host
 	// FIXME: add subcommands to set configpath or hostname

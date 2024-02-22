@@ -22,15 +22,15 @@ import (
 	"strconv"
 	"syscall"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"golang.org/x/exp/slog"
 )
 
 /*
 This function drops privileges to the user that was
 specified as an argument.
+FIXME: make this work on windows as well!
 */
-func DropPrivileges(userToSwitchTo string, logger *slog.Logger, p *tea.Program) error {
+func DropPrivileges(userToSwitchTo string, logger *slog.Logger) error {
 
 	// Lookup the user
 	userInfo, err := user.Lookup(userToSwitchTo)

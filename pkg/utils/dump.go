@@ -18,34 +18,41 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package utils
 
 import (
-	"fmt"
 	"os"
-	"os/exec"
-
-	tea "github.com/charmbracelet/bubbletea"
-	"golang.org/x/exp/slog"
+	"runtime"
 )
 
-const mbrDumpPath = "/dev/shm/mbr.bak"
+const mbrSize = 1024
 
-func DumpMBR(logger *slog.Logger, p *tea.Program) (string, error) {
+/* This function dumps the MBR */
+func UniversalMBRDump() ([]byte, error) {
 
-	if _, err := os.Stat(mbrDumpPath); err == nil {
-		return "", err
-	} else if os.IsNotExist(err) {
-		// Backup the mbr
-		// FIXME: how can I use another command and also a config file here to make disks more dynamic
-		cmd := exec.Command("dd", "if=/dev/sda", fmt.Sprintf("of=%s", mbrDumpPath), "bs=1024k", "count=1") // "status=none"
-		stdout, err := cmd.Output()
-		if err != nil {
-			//p.Send(resultMsg{msg: err.Error(), level: Error})
-			// logger.Error(err.Error())
-			return "", err
-		}
+	var mbrBytes = make([]byte, mbrSize)
+	var err error = nil
+	var diskPath string
 
-		return string(stdout), err
-	} else {
-		return "", fmt.Errorf("failed to check if file exits! %s", mbrDumpPath)
+	// Set boot drive depending on os
+	switch runtime.GOOS {
+	case "darwin":
+		// FIXME: how to dump MBR on MacOs?
+		fallthrough
+	case "linux":
+		diskPath = "/dev/sda"
+	case "windows":
+		diskPath = "\\.\\PhysicalDrive0"
 	}
 
+	// Open the boot drive
+	mbrHandle, err := os.Open(diskPath)
+	if err != nil {
+		return nil, err
+	}
+
+	// Read the first 1024 bytes
+	_, err = mbrHandle.Read(mbrBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return mbrBytes, err
 }
